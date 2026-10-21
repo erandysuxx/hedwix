@@ -29,6 +29,8 @@ CAMPOS = ["id", "origin", "source", "source_type", "title", "url", "published", 
           "score", "extra"]
 ORIGENES_VALIDOS = {"curated", "email"}
 TIPOS_DE_FUENTE_VALIDOS = {"rss", "api", "scrape"}
+# Los mismos límites que ESQUEMA.md y el validador de la DB (db/migraciones/001_noticias.py).
+LARGO_MAXIMO = {"title": 300, "summary": 500, "content": fuentes_curadas.LIMITE_DE_CONTENIDO}
 
 
 # ============================================================ Validación
@@ -60,16 +62,19 @@ def problemas_del_item(item):
         problemas.append(f"source_type inválido: {item['source_type']!r}")
     if not (isinstance(item["title"], str) and item["title"].strip()):
         problemas.append("title vacío")
+    elif len(item["title"]) > LARGO_MAXIMO["title"]:
+        problemas.append(f"title de más de {LARGO_MAXIMO['title']} caracteres: {len(item['title'])}")
     if not (isinstance(item["url"], str) and re.match(r"https?://[^\s/]+", item["url"])):
         problemas.append(f"url inválida: {item['url']!r}")
     if not es_fecha_iso_con_zona(item["published"]):
         problemas.append(f"published no es fecha ISO con zona horaria: {item['published']!r}")
     if not es_fecha_iso_con_zona(item["fetched_at"]):
         problemas.append(f"fetched_at no es fecha ISO con zona horaria: {item['fetched_at']!r}")
-    if not isinstance(item["summary"], str):
-        problemas.append("summary no es texto")
-    if not isinstance(item["content"], str):
-        problemas.append("content no es texto")
+    for campo in ("summary", "content"):
+        if not isinstance(item[campo], str):
+            problemas.append(f"{campo} no es texto")
+        elif len(item[campo]) > LARGO_MAXIMO[campo]:
+            problemas.append(f"{campo} de más de {LARGO_MAXIMO[campo]} caracteres: {len(item[campo])}")
     if item["score"] is not None and (isinstance(item["score"], bool) or not isinstance(item["score"], (int, float))):
         problemas.append(f"score no es número: {item['score']!r}")
     if not isinstance(item["extra"], dict):
