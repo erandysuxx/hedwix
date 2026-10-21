@@ -87,6 +87,7 @@ Cómo se protege la DB:
 | `por_fuente` | "lo último de Hacker News" |
 | `populares` | ordenar por `score` (votos o puntos) |
 | `busqueda` | buscar texto en título, resumen y contenido |
+| `por_llegada` | "lo que llegó desde el último digest" (dispatch) |
 
 El código para leer y escribir está en `hedwix_db/noticias.py`: `recientes()`, `mas_populares()`, `buscar()`, `insertar_noticias()`. Las piezas que siguen lo van a reutilizar.
 

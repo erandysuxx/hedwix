@@ -1,8 +1,9 @@
 """Agent - Dispatch (pieza 5 de Hedwix): escoge las noticias más importantes del día y escribe el digest de WhatsApp.
 
 Pasos de cada corrida:
-1. Leer: las noticias que guardó el Funnel en las últimas horas. Con MONGODB_URI, de la colección `noticias` de la
-   DB de Egon; sin ella, de datos/noticias.jsonl.
+1. Leer: las noticias que guardó el Funnel en las últimas horas (por `fetched_at`, no por `published`: Anthropic, Meta
+   y HF Daily Papers solo dan el día, así que una nota de ayer guardada hoy quedaría fuera). Con MONGODB_URI, de la
+   colección `noticias` de la DB de Egon; sin ella, de datos/noticias.jsonl.
 2. Seleccionar: Claude lee título y resumen de todas y escoge las NOTICIAS_POR_DIGEST más importantes.
 3. Escribir: Claude lee el texto completo solo de las seleccionadas y redacta el mensaje en español.
 4. Guardar: el digest (mensaje + noticias usadas), con la fecha como llave. Con MONGODB_URI, en la colección
@@ -89,10 +90,10 @@ ESQUEMA_DE_SELECCION = {
 # Con MONGODB_URI se lee de MongoDB; sin ella, del archivo JSONL del Funnel.
 
 def leer_noticias(archivo, desde):
-    """Las noticias publicadas desde la fecha indicada."""
+    """Las noticias que el Funnel guardó desde la fecha indicada."""
     coleccion = funnel.coleccion_de_noticias()
     if coleccion is not None:
-        return [{"id": documento.pop("_id"), **documento} for documento in coleccion.find({"published": {"$gte": desde}})]
+        return [{"id": documento.pop("_id"), **documento} for documento in coleccion.find({"fetched_at": {"$gte": desde}})]
     if not archivo.exists():
         return []
     noticias = []
@@ -100,7 +101,7 @@ def leer_noticias(archivo, desde):
         for linea in lineas:
             if linea.strip():
                 noticia = json.loads(linea)
-                if datetime.fromisoformat(noticia["published"]) >= desde:
+                if datetime.fromisoformat(noticia["fetched_at"]) >= desde:
                     noticias.append(noticia)
     return noticias
 
@@ -233,7 +234,7 @@ def correr_dispatch(desde, archivo=funnel.ARCHIVO_DE_SALIDA):
 
 def main():
     parser = argparse.ArgumentParser(description="Escoge las noticias más importantes y escribe el digest del día.")
-    parser.add_argument("--horas", type=int, default=24, help="qué tan atrás buscar noticias (default: 24)")
+    parser.add_argument("--horas", type=int, default=24, help="qué tan atrás buscar noticias que guardó el Funnel (default: 24)")
     parser.add_argument("--entrada", type=Path, default=funnel.ARCHIVO_DE_SALIDA,
                         help=f"archivo JSONL del Funnel (default: {funnel.ARCHIVO_DE_SALIDA})")
     args = parser.parse_args()

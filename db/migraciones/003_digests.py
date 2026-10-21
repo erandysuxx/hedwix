@@ -1,6 +1,9 @@
+from pymongo import DESCENDING
+
 from migraciones import asegurar_coleccion
 
-DESCRIPCION = "Colección digests: el mensaje que escribe el Agent-Dispatch cada día, con la fecha como _id"
+DESCRIPCION = ("Colección digests: el mensaje que escribe el Agent-Dispatch cada día, con la fecha como _id;"
+               " e índice de noticias por fetched_at, que es como el dispatch las lee")
 
 TEXTO = {"bsonType": "string"}
 
@@ -34,3 +37,5 @@ ESQUEMA = {
 def aplicar(db):
     # El _id es la fecha, así que consultar "el digest de ayer" ya usa el índice de _id
     asegurar_coleccion(db, "digests", ESQUEMA)
+    # El dispatch lee lo que llegó en las últimas horas, no lo publicado: varias fuentes solo dan el día de publicación
+    db.noticias.create_index([("fetched_at", DESCENDING)], name="por_llegada")

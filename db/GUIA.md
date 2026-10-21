@@ -97,6 +97,7 @@ Los mismos 12 campos de `ESQUEMA.md` (raíz del repo), con estos cambios:
 | `por_fuente` | `source, published -1` | filtrar por fuente |
 | `populares` | `score -1`, sólo donde `score` es número | top de Hacker News y HF |
 | `busqueda` | texto: `title`×10, `summary`×5, `content` | búsqueda libre |
+| `por_llegada` | `fetched_at -1` | lo que llegó en las últimas horas (dispatch) |
 
 El validador `$jsonSchema` rechaza lo que no cumpla el esquema, por ejemplo `origin` distinto de `curated`/`email`, una URL inválida o fechas en texto.
 
