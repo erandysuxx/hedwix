@@ -40,5 +40,29 @@ services:
         condition: service_healthy
     command: sleep infinity
 
+  # Jupyter para revisar los datos. Sólo arranca con: docker compose --profile testing up -d notebook
+  notebook:
+    profiles: ["testing"]
+    build:
+      context: ..
+      dockerfile: db/testing/Dockerfile
+    working_dir: /app/testing
+    user: "1000:1000"
+    environment:
+      MONGODB_URI: ${MONGODB_URI}
+      HOME: /tmp
+      PYTHONDONTWRITEBYTECODE: "1"
+    ports:
+      - "127.0.0.1:8888:8888"   # sólo esta máquina; por eso Jupyter va sin token
+    volumes:
+      - .:/app
+      - ..:/repo:ro
+    depends_on:
+      mongo:
+        condition: service_healthy
+    command: >
+      jupyter lab --ip=0.0.0.0 --port=8888 --no-browser
+      --ServerApp.token= --ServerApp.password= --ServerApp.root_dir=/app/testing
+
 volumes:
   mongo-data:

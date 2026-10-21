@@ -1,0 +1,4 @@
+# Para el notebook de revisión (además de db/requirements.txt y los del funnel)
+jupyterlab
+pandas
+matplotlib

@@ -8,3 +8,5 @@ datos/
 backups/
 db/docs/*.json
 .archify/
+db/testing/salida/
+.ipynb_checkpoints/

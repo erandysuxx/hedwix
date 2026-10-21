@@ -21,6 +21,7 @@ db/
 ├── migrar.py                 # aplica migraciones pendientes
 ├── cargar_jsonl.py           # carga un JSONL del funnel
 ├── consultas.py              # ejemplos de consultas
+├── testing/                 # notebook para revisar los datos (servicio "notebook")
 ├── scripts/respaldar.sh, restaurar.sh
 └── backups/                  # respaldos (no se suben a git)
 ```
@@ -76,6 +77,8 @@ En los dos casos las repetidas se ignoran, porque `_id` es el sha1 de la URL.
 docker compose exec app python consultas.py --buscar "agent"
 docker compose exec mongo mongosh "$(grep ^MONGODB_URI .env | cut -d= -f2-)"   # shell como hedwix_app
 ```
+
+**Revisar que los datos estén bien:** el notebook `testing/revisar_datos.ipynb` hace conteos, gráficas y 15 chequeos de calidad. Se puede abrir en Jupyter o correr desde la terminal; ver [`testing/README.md`](testing/README.md).
 
 Desde el host (Compass, etc.): `mongodb://hedwix_app:<clave>@127.0.0.1:27017/hedwix?authSource=hedwix`
 
