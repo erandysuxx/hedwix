@@ -17,7 +17,7 @@ db/
 ├── hedwix_db/                # código de acceso a datos (lo reutilizan MCP / dispatch)
 │   ├── conexion.py           #   obtener_db()
 │   └── noticias.py           #   insertar_noticias, recientes, mas_populares, buscar, a_item
-├── migraciones/              # 001_noticias.py, 002_usuarios_envios.py, ...
+├── migraciones/              # 001_noticias.py, 002_usuarios_envios.py, 003_digests.py, ...
 ├── migrar.py                 # aplica migraciones pendientes
 ├── cargar_jsonl.py           # carga un JSONL del funnel
 ├── consultas.py              # ejemplos de consultas
@@ -106,6 +106,10 @@ El validador `$jsonSchema` rechaza lo que no cumpla el esquema, por ejemplo `ori
 ### `envios` (dispatch, por ahora vacía)
 `usuario_id`, `noticia_ids[]`, `canal: whatsapp`, `twilio_sid` (único cuando existe), `estado` (`pendiente|enviado|entregado|leido|fallido`), `error`, `creado`, `actualizado`.
 - El índice `ya_enviadas` (`usuario_id, noticia_ids`) sirve para no reenviarle a nadie la misma noticia.
+
+### `digests` (dispatch)
+`_id` (la fecha del digest en México, `AAAA-MM-DD`), `generado_at`, `modelo`, `mensaje` (máximo 1,600 caracteres, el límite de Twilio), `noticias[] {id, source, title, url, por_que}`.
+- Si el dispatch corre dos veces el mismo día, el segundo digest reemplaza al primero.
 
 ## 5. Migraciones (cambios de esquema)
 

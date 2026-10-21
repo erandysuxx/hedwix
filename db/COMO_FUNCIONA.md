@@ -71,7 +71,8 @@ Corre en Docker con `mongo:7.0`, escucha sólo en `127.0.0.1:27017` y tiene aute
 | `noticias` | Lo que entrega el funnel. `_id` = sha1 de la URL; fechas como `Date`. | **812 noticias** |
 | `usuarios` | Suscriptores: teléfono E.164, preferencias (fuentes, temas, hora de envío). | lista, vacía |
 | `envios` | Qué noticias se mandaron a quién por WhatsApp y su estado en Twilio. | lista, vacía |
-| `_migraciones` | Qué migraciones ya se aplicaron. | 2 |
+| `digests` | El mensaje que escribe el Agent-Dispatch cada día. `_id` = fecha `AAAA-MM-DD`. | uno por día |
+| `_migraciones` | Qué migraciones ya se aplicaron. | 3 |
 
 Cómo se protege la DB:
 - **Validador:** cada colección tiene uno (`$jsonSchema`) que rechaza documentos mal formados, por ejemplo un `origin` inválido, una URL rota o fechas como texto.
@@ -97,7 +98,7 @@ El código para leer y escribir está en `hedwix_db/noticias.py`: `recientes()`,
 | **MCP** | Consultas de lectura: recientes, por fuente, búsqueda, populares. | Las funciones de `hedwix_db/noticias.py` y sus índices. |
 | **Cloudflare** | Nada directo; expone el MCP hacia afuera. | — |
 | **Agent** | Usa las tools del MCP. | — |
-| **Agent-Dispatch** | Lee `usuarios` y `noticias`, escribe en `envios`. | Colecciones e índices, incluido el que evita reenviar una noticia. |
+| **Agent-Dispatch** | Lee `usuarios` y `noticias`, escribe en `digests` y `envios`. | Colecciones e índices, incluido el que evita reenviar una noticia. |
 | **Twilio → WhatsApp** | Sus webhooks actualizan `envios.estado` usando `twilio_sid`. | Índice único sobre `twilio_sid`. |
 
 ---
