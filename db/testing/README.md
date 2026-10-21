@@ -17,7 +17,28 @@
 
 Necesita que Mongo esté arriba (`docker compose up -d`, desde `db/`).
 
-## Opción 1: abrirlo en Jupyter
+## Opción 1: abrirlo en VS Code
+
+VS Code corre el notebook con el **kernel** (Python) que elijas. El Python del sistema no tiene `pandas` ni
+`pymongo`, y por eso falla desde la primera celda. Usa el entorno de esta carpeta:
+
+```bash
+# Una sola vez, desde la raíz del repo. uv se instala en ~/.local/bin sin sudo:
+#   curl -LsSf https://astral.sh/uv/install.sh | sh
+uv venv --python 3.13 db/testing/.venv
+uv pip install --python db/testing/.venv/bin/python -r requirements.txt -r db/requirements.txt -r db/testing/requirements.txt
+# Registrarlo como kernel con nombre, para que VS Code lo encuentre aunque el .venv esté en una subcarpeta:
+db/testing/.venv/bin/python -m ipykernel install --user --name hedwix-db --display-name "Hedwix DB (db/testing/.venv)"
+```
+
+En VS Code: recarga la ventana (*Developer: Reload Window*), abre `revisar_datos.ipynb` → **Select Kernel**
+(arriba a la derecha) → *Jupyter Kernel…* → **Hedwix DB (db/testing/.venv)**. Si no aparece, usa
+*Python Environments… → Enter interpreter path…* con la ruta a `db/testing/.venv/bin/python`. Fuera de Docker, el notebook lee la URI de `db/.env` y se conecta por `127.0.0.1`.
+
+**Sin instalar nada:** *Select Kernel → Existing Jupyter Server* → `http://127.0.0.1:8888`, con el servicio
+`notebook` de la opción 2 arriba. Así el código corre dentro de Docker.
+
+## Opción 2: abrirlo en Jupyter (navegador)
 
 ```bash
 cd db
@@ -29,7 +50,7 @@ Jupyter no tiene contraseña porque sólo escucha en esta máquina (`127.0.0.1`)
 
 Para apagarlo: `docker compose --profile testing stop notebook`
 
-## Opción 2: correrlo desde la terminal y generar un reporte HTML
+## Opción 3: correrlo desde la terminal y generar un reporte HTML
 
 ```bash
 cd db
