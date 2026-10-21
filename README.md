@@ -1,6 +1,6 @@
 # Hedwix: Curated Sources + Information Funnel
 
-Piezas 2 y 3 del bot de noticias de IA Hedwix. Trae noticias de 25 fuentes curadas (blogs de laboratorios, newsletters, arXiv, Hacker News, rankings de modelos), las normaliza a un solo formato, descarta las inválidas o repetidas y las guarda para la DB.
+Piezas 2 y 3 del bot de noticias de IA Hedwix. Trae noticias de 25 fuentes curadas (blogs de laboratorios, newsletters, arXiv, Hacker News, rankings de modelos), las normaliza a un solo formato, descarta las inválidas o repetidas y las guarda en la DB (MongoDB, carpeta `db/`).
 
 | Archivo | Qué hace |
 |---|---|
@@ -8,6 +8,7 @@ Piezas 2 y 3 del bot de noticias de IA Hedwix. Trae noticias de 25 fuentes curad
 | `funnel.py` | Valida las noticias, quita las que ya se guardaron y agrega las nuevas a `datos/noticias.jsonl`. |
 | `ESQUEMA.md` | Formato de cada noticia y tabla sugerida para la DB. |
 | `ejemplos/noticias_ejemplo.jsonl` | Noticias reales de ejemplo, 2 por fuente. |
+| `db/` | La DB (pieza 4): MongoDB en Docker, migraciones, carga y respaldos. Ver [`db/GUIA.md`](db/GUIA.md) y [`db/COMO_FUNCIONA.md`](db/COMO_FUNCIONA.md). |
 
 ## Uso
 

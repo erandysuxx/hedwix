@@ -1,0 +1,44 @@
+# Nombre fijo: red hedwix_default y volumen hedwix_mongo-data, sin importar la carpeta
+name: hedwix
+
+services:
+  mongo:
+    # mongo:8.x no arranca en kernels Linux >= 6.19 (SERVER-121912); usar 7.0
+    image: mongo:7.0
+    container_name: mongo-dev
+    ports:
+      - "127.0.0.1:27017:27017"
+    environment:
+      # Sólo se aplican la primera vez, con el volumen vacío
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+      HEDWIX_APP_PASSWORD: ${HEDWIX_APP_PASSWORD}
+    volumes:
+      - mongo-data:/data/db
+      - ./mongo-init:/docker-entrypoint-initdb.d:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  app:
+    build: .
+    working_dir: /app
+    user: "1000:1000"
+    environment:
+      # La app sólo recibe su propia URI, no las credenciales de root
+      MONGODB_URI: ${MONGODB_URI}
+      PYTHONDONTWRITEBYTECODE: "1"
+    volumes:
+      - .:/app
+      - ..:/repo:ro   # raíz del repo: funnel, ejemplos/ y datos/
+    depends_on:
+      mongo:
+        condition: service_healthy
+    command: sleep infinity
+
+volumes:
+  mongo-data:

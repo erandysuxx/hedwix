@@ -2,3 +2,9 @@
 __pycache__/
 *.pyc
 datos/
+
+# DB (db/)
+.env
+backups/
+db/docs/*.json
+.archify/
