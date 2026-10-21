@@ -15,7 +15,13 @@ uv venv .venv && uv pip install --python .venv/bin/python -r requirements.txt   
 - Hay noticias reales de ejemplo, 2 por fuente, en `ejemplos/noticias_ejemplo.jsonl`.
 - El resumen de cada corrida (nuevas, repetidas, inválidas por fuente) y las alertas de fuentes rotas salen por stderr, no en el archivo.
 
-Cuando la DB exista, el Funnel puede escribir directo en ella: solo cambian `guardar()` e `ids_ya_guardados()` en `funnel.py`.
+Para escribir directo en la DB (MongoDB) en lugar del archivo, define `MONGODB_URI`:
+
+```bash
+MONGODB_URI="mongodb://hedwix_app:<clave>@127.0.0.1:27017/hedwix?authSource=hedwix" .venv/bin/python funnel.py
+```
+
+Sin `MONGODB_URI` todo sigue igual que antes (JSONL). Ver "MongoDB" abajo.
 
 ## Campos
 
@@ -61,6 +67,17 @@ CREATE INDEX noticias_source    ON noticias (source);
 ```
 
 Para cargar: `INSERT ... ON CONFLICT (id) DO NOTHING`. El Funnel ya no manda repetidos, pero así la DB también queda protegida.
+
+## MongoDB (la DB actual)
+
+La DB usa MongoDB en lugar de la tabla de Postgres de arriba. Cada noticia es un documento de la colección `noticias` de la base `hedwix`:
+
+- `id` se guarda como **`_id`**. Mongo rechaza los repetidos, como el `ON CONFLICT DO NOTHING`.
+- `published` y `fetched_at` se guardan como **fechas (`Date`)**, no como texto, para poder filtrar y ordenar.
+- Los demás campos van igual, con `extra` como subdocumento (se puede consultar, por ejemplo `extra.rank`).
+- La colección tiene un validador `$jsonSchema` con las mismas reglas de la tabla de campos, e índices por `published`, por `source` + `published`, por `score` y de texto (`title`, `summary`, `content`).
+
+El validador, los índices y la carga desde JSONL viven en la carpeta [`db/`](db/) de este repo (ver `db/GUIA.md`).
 
 ## Qué hay en `content`
 
