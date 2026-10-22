@@ -3,7 +3,7 @@
 Pasos de cada corrida:
 1. Leer: las noticias que guardó el Funnel en las últimas horas (por `fetched_at`, no por `published`: Anthropic, Meta
    y HF Daily Papers solo dan el día, así que una nota de ayer guardada hoy quedaría fuera). Con MONGODB_URI, de la
-   colección `noticias` de la DB de Egon; sin ella, de datos/noticias.jsonl.
+   colección `noticias` de la DB de Egon; sin ella, de funnel/datos/noticias.jsonl.
 2. Seleccionar: Claude lee título y resumen de todas y escoge las NOTICIAS_POR_DIGEST más importantes.
 3. Escribir: Claude lee el texto completo solo de las seleccionadas y redacta el mensaje en español.
 4. Guardar: el digest (mensaje + noticias usadas), con la fecha como llave. Con MONGODB_URI, en la colección
@@ -11,7 +11,7 @@ Pasos de cada corrida:
 5. Enviar: por ahora solo se imprime. Cuando exista Twilio (pieza 6), solo hay que cambiar enviar().
 
 Usa los créditos de API de Anthropic del equipo: la llave va en la variable de entorno ANTHROPIC_API_KEY.
-Uso: .venv/bin/python dispatch.py [--horas 24] [--entrada datos/noticias.jsonl]
+Uso (desde dispatch/): .venv/bin/python dispatch.py [--horas 24] [--entrada ../funnel/datos/noticias.jsonl]
      MONGODB_URI="mongodb://usuario:clave@127.0.0.1:27017/hedwix?authSource=hedwix" .venv/bin/python dispatch.py
 """
 
@@ -24,7 +24,8 @@ from zoneinfo import ZoneInfo
 
 import anthropic
 
-import funnel
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "funnel"))  # funnel.py vive en funnel/
+import funnel  # noqa: E402
 
 
 # ============================================================ Configuración

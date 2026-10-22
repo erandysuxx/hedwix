@@ -5,24 +5,25 @@ Email + Curated Sources ─► Information Funnel ─► [ DB: MongoDB ] ─► 
                                                         └──────► Agent-Dispatch ─► Twilio ─► WhatsApp ─► usuarios
 ```
 
-El funnel vive en la raíz de este repo. La carpeta `db/` es la DB: esquema, migraciones, carga y consultas.
-Todos los comandos de esta guía se corren desde `db/`, salvo que se indique otra cosa.
+Cada pieza de Hedwix tiene su carpeta (`funnel/`, `db/`, `mcp/`…); ver el [README de la raíz](../README.md).
+`db/` es la DB: esquema, migraciones, carga, consultas y respaldos.
+**Todos los comandos de esta guía se corren desde la raíz del repo.** Ahí está el `docker-compose.yml` que une todas las piezas, y también el `.env`.
 
 ```
 db/
-├── docker-compose.yml        # mongo:7.0 (con auth) + contenedor app (Python 3.13)
+├── docker-compose.yml        # mongo:7.0 (con auth) + app (Python 3.13) + notebook; lo incluye el de la raíz
 ├── Dockerfile, requirements.txt
-├── .env / .env.example       # credenciales (.env no se sube a git)
-├── mongo-init/               # crea el usuario hedwix_app la primera vez
-├── hedwix_db/                # código de acceso a datos (lo reutilizan MCP / dispatch)
+├── mongo-init/               # crea los usuarios hedwix_app y hedwix_mcp la primera vez
+├── hedwix_db/                # código de acceso a datos (lo reutilizan funnel, MCP y dispatch)
 │   ├── conexion.py           #   obtener_db()
-│   └── noticias.py           #   insertar_noticias, recientes, mas_populares, buscar, a_item
+│   ├── noticias.py           #   insertar_noticias, recientes, mas_populares, buscar, por_fuente, a_item
+│   └── digests.py            #   digest()
 ├── migraciones/              # 001_noticias.py, 002_usuarios_envios.py, 003_digests.py, ...
 ├── migrar.py                 # aplica migraciones pendientes
 ├── cargar_jsonl.py           # carga un JSONL del funnel
 ├── consultas.py              # ejemplos de consultas
 ├── testing/                 # notebook para revisar los datos (servicio "notebook")
-├── scripts/respaldar.sh, restaurar.sh
+├── scripts/respaldar.sh, restaurar.sh, crear_usuario_mcp.sh
 └── backups/                  # respaldos (no se suben a git)
 ```
 
@@ -31,8 +32,8 @@ db/
 ## 1. Primera vez
 
 ```bash
-cp .env.example .env
-# Cambia las 3 contraseñas (openssl rand -hex 16). HEDWIX_APP_PASSWORD también va dentro de MONGODB_URI.
+cp .env.example .env                      # en la raíz del repo
+# Cambia las 4 contraseñas (openssl rand -hex 16). HEDWIX_APP_PASSWORD va también dentro de MONGODB_URI, y HEDWIX_MCP_PASSWORD dentro de MCP_MONGODB_URI.
 docker compose up -d --build
 docker compose ps                         # mongo-dev debe estar "Up (healthy)"
 docker compose exec app python migrar.py  # crea colecciones, validadores e índices
@@ -44,20 +45,18 @@ Usuarios de Mongo:
 |---|---|---|---|
 | `root` | `admin` | todo | respaldos, administración |
 | `hedwix_app` | `hedwix` | `readWrite` + `dbAdmin` sólo sobre `hedwix` | app, funnel, migraciones |
+| `hedwix_mcp` | `hedwix` | `lectura_mcp`: sólo `find` en `noticias` y `digests` | el MCP (`mcp/`); en una DB existente se crea (o se le cambia el rol `read` de antes) con `db/scripts/crear_usuario_mcp.sh` |
 
 > Las credenciales de `.env` **sólo se aplican cuando el volumen está vacío**. Si las cambias después,
 > tienes que hacer respaldo → `docker compose down -v` → `up` → `migrar.py` → restaurar.
 
 ## 2. Meter noticias
 
-**Opción A: el funnel escribe directo** (`funnel.py`, en la raíz del repo).
-El host no tiene `python3-venv`, así que se corre en un contenedor conectado a la red del compose:
+**Opción A: el funnel escribe directo** (`funnel/`). Tiene su propio servicio en el compose, que no se queda corriendo:
 
 ```bash
-cd ..                                    # raíz del repo
-set -a; source db/.env; set +a
-docker run --rm --network hedwix_default -e MONGODB_URI -v "$PWD":/funnel:ro -w /funnel \
-  python:3.13-slim sh -c 'pip install -q -r requirements.txt && python funnel.py --horas 24'
+docker compose run --rm funnel                              # últimas 24 h
+docker compose run --rm funnel python funnel.py --horas 48
 ```
 
 Tarda unos 3 minutos. Si en vez de eso usas una `.venv` en el host, la URI va con `127.0.0.1` en lugar de `mongo`.
@@ -65,8 +64,8 @@ Tarda unos 3 minutos. Si en vez de eso usas una `.venv` en el host, la URI va co
 **Opción B: cargar un JSONL** que ya generó el funnel:
 
 ```bash
-docker compose exec app python cargar_jsonl.py /repo/ejemplos/noticias_ejemplo.jsonl
-docker compose exec app python cargar_jsonl.py /repo/datos/noticias.jsonl
+docker compose exec app python cargar_jsonl.py /repo/funnel/ejemplos/noticias_ejemplo.jsonl
+docker compose exec app python cargar_jsonl.py /repo/funnel/datos/noticias.jsonl
 ```
 
 En los dos casos las repetidas se ignoran, porque `_id` es el sha1 de la URL.
@@ -84,10 +83,12 @@ Desde el host (Compass, etc.): `mongodb://hedwix_app:<clave>@127.0.0.1:27017/hed
 
 ---
 
+**MCP:** `docker compose up -d mcp` lo levanta en `http://127.0.0.1:8000/mcp`. Ver [`../mcp/README.md`](../mcp/README.md).
+
 ## 4. Modelo de datos (base `hedwix`)
 
 ### `noticias`
-Los mismos 12 campos de `ESQUEMA.md` (raíz del repo), con estos cambios:
+Los mismos 12 campos de [`funnel/ESQUEMA.md`](../funnel/ESQUEMA.md), con estos cambios:
 - `id` → **`_id`**
 - `published` / `fetched_at` → **`Date`**
 
@@ -114,7 +115,7 @@ El validador `$jsonSchema` rechaza lo que no cumpla el esquema, por ejemplo `ori
 
 ## 5. Migraciones (cambios de esquema)
 
-1. Crea `migraciones/003_lo_que_cambia.py` con `DESCRIPCION` y `aplicar(db)`. Para crear una colección o cambiar su validador usa `asegurar_coleccion()`.
+1. Crea `db/migraciones/004_lo_que_cambia.py` (la 003 es `003_digests`, del dispatch; avisa al equipo qué número tomas) con `DESCRIPCION` y `aplicar(db)`. Para crear una colección o cambiar su validador usa `asegurar_coleccion()`.
 2. Corre `docker compose exec app python migrar.py`.
 
 Las migraciones aplicadas se anotan en la colección `_migraciones` y no se repiten. **No edites una migración ya aplicada**: crea una nueva.
@@ -122,8 +123,8 @@ Las migraciones aplicadas se anotan en la colección `_migraciones` y no se repi
 ## 6. Respaldos y mover la DB a otro servidor
 
 ```bash
-scripts/respaldar.sh                                     # -> backups/hedwix_AAAA-MM-DD_HHMM.archive.gz
-scripts/restaurar.sh backups/hedwix_AAAA-MM-DD_HHMM.archive.gz
+db/scripts/respaldar.sh                                        # -> db/backups/hedwix_AAAA-MM-DD_HHMM.archive.gz
+db/scripts/restaurar.sh db/backups/hedwix_AAAA-MM-DD_HHMM.archive.gz
 ```
 
 **Para mover la DB a otra máquina:**

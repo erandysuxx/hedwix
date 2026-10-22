@@ -1,0 +1,21 @@
+# Dispatch: escoge las noticias del día con Claude y escribe el digest. No se queda corriendo; se corre a mano:
+#   docker compose run --rm dispatch                       (últimas 24 h; necesita ANTHROPIC_API_KEY en .env)
+#   docker compose run --rm dispatch python dispatch.py --horas 48
+services:
+  dispatch:
+    build:
+      context: ..
+      dockerfile: dispatch/Dockerfile
+    profiles: ["manual"]
+    working_dir: /repo/dispatch
+    user: "1000:1000"
+    environment:
+      MONGODB_URI: ${MONGODB_URI}             # usuario hedwix_app (lee noticias, escribe digests)
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      PYTHONDONTWRITEBYTECODE: "1"
+    volumes:
+      - ..:/repo   # escritura: sin MONGODB_URI guarda en dispatch/datos/digests/
+    depends_on:
+      mongo:
+        condition: service_healthy
+    command: python dispatch.py

@@ -1,0 +1,20 @@
+# MCP de Hedwix: tools de sólo lectura sobre la DB, en http://127.0.0.1:8000/mcp
+services:
+  mcp:
+    build:
+      context: ..
+      dockerfile: mcp/Dockerfile
+    working_dir: /repo/mcp
+    user: "1000:1000"
+    environment:
+      MONGODB_URI: ${MCP_MONGODB_URI}   # usuario hedwix_mcp, sólo lectura
+      PYTHONDONTWRITEBYTECODE: "1"
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - ..:/repo:ro   # usa db/hedwix_db
+    depends_on:
+      mongo:
+        condition: service_healthy
+    restart: unless-stopped
+    command: python servidor.py

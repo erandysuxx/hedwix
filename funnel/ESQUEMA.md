@@ -77,7 +77,7 @@ La DB usa MongoDB en lugar de la tabla de Postgres de arriba. Cada noticia es un
 - Los demás campos van igual, con `extra` como subdocumento (se puede consultar, por ejemplo `extra.rank`).
 - La colección tiene un validador `$jsonSchema` con las mismas reglas de la tabla de campos, e índices por `published`, por `source` + `published`, por `score` y de texto (`title`, `summary`, `content`).
 
-El validador, los índices y la carga desde JSONL viven en la carpeta [`db/`](db/) de este repo (ver `db/GUIA.md`).
+El validador, los índices y la carga desde JSONL viven en la carpeta [`db/`](../db/) de este repo (ver [`db/GUIA.md`](../db/GUIA.md)).
 
 ## Qué hay en `content`
 

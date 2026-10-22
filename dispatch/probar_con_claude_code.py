@@ -4,7 +4,7 @@ Usa los mismos prompts, modelo, esfuerzo y validaciones de dispatch.py; solo cam
 a `claude -p` sin herramientas. No prueba la llamada a la API en sí (llave, fallbacks), y no guarda el digest.
 Deja fuera arXiv para gastar menos. Cuenta contra el límite de uso de tu plan de Claude.
 
-Uso: .venv/bin/python probar_con_claude_code.py [--horas 24] [--entrada datos/noticias.jsonl]
+Uso (desde dispatch/): .venv/bin/python probar_con_claude_code.py [--horas 24] [--entrada ../funnel/datos/noticias.jsonl]
 """
 
 import argparse
@@ -17,7 +17,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import dispatch
-import funnel
+import funnel  # dispatch ya agregó funnel/ al sys.path
 
 # Carpeta vacía para correr `claude -p`, así no carga la memoria ni el CLAUDE.md de este proyecto
 CARPETA_AISLADA = tempfile.mkdtemp(prefix="hedwix-prueba-")
