@@ -1,0 +1,11 @@
+# Hedwix: une los servicios de cada pieza. Todos los comandos de docker compose se corren desde aquí (la raíz).
+# Comparten el nombre de proyecto (red hedwix_default, volumen hedwix_mongo-data) y el archivo .env de la raíz.
+name: hedwix
+
+include:
+  - path: db/docker-compose.yml       # mongo, app (herramientas de la DB), notebook (profile testing)
+    env_file: .env
+  - path: funnel/docker-compose.yml   # funnel (se corre a mano: docker compose run --rm funnel)
+    env_file: .env
+  - path: mcp/docker-compose.yml      # mcp (http://127.0.0.1:8000/mcp)
+    env_file: .env

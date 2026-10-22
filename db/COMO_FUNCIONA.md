@@ -7,10 +7,10 @@ Hedwix es un bot de noticias de IA. Junta noticias de muchas fuentes, las guarda
 más adelante, un agente las consultará y se las mandará a los usuarios por WhatsApp.
 
 ```
- ENCENDIDO ───────────────────────────────────────────────────    APAGADO (siguiente) ─────────────────────
- Curated Sources ─► Information Funnel ─► MongoDB  ─ ─ ─ ─ ─ ─►  MCP ─► Cloudflare ─► Agent
+ ENCENDIDO ──────────────────────────────────────────────────────────    APAGADO (siguiente) ──────────────
+ Curated Sources ─► Information Funnel ─► MongoDB ─► MCP (127.0.0.1:8000) ─ ─ ─►  Cloudflare ─► Agent
  (Email: apagado) ─ ┘        │               ▲  │
-                             ▼               │  └ ─ ─ ─ ─ ─ ─ ─►  Agent-Dispatch ─► Twilio ─► WhatsApp ─► Usuarios
+                             ▼               │  └ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─►  Agent-Dispatch ─► Twilio ─► WhatsApp ─► Usuarios
                       noticias.jsonl ─ cargar_jsonl.py
 ```
 
@@ -20,7 +20,8 @@ más adelante, un agente las consultará y se las mandará a los usuarios por Wh
 | Email | ⏸ pendiente (Diego) | — |
 | Information Funnel | ✅ funciona, escribe en Mongo | `funnel.py` |
 | **DB (MongoDB)** | ✅ funciona, local en Docker | `db/` (esta carpeta) |
-| MCP, Cloudflare, Agent | ⏸ pendiente | — |
+| **MCP** | ✅ funciona, local en Docker (sólo lectura) | `mcp/` → `http://127.0.0.1:8000/mcp` |
+| Cloudflare, Agent | ⏸ pendiente | — |
 | Agent-Dispatch, Twilio, WhatsApp | ⏸ pendiente | — |
 
 ---
@@ -38,7 +39,7 @@ más adelante, un agente las consultará y se las mandará a los usuarios por Wh
 | Rankings de modelos | OpenRouter, HF trending |
 
 Además de consultarlas:
-- Normaliza cada noticia a **un solo formato de 12 campos**. Ese formato está descrito en `ESQUEMA.md`.
+- Normaliza cada noticia a **un solo formato de 12 campos**. Ese formato está descrito en [`funnel/ESQUEMA.md`](../funnel/ESQUEMA.md).
 - Descarga el texto completo de las notas que lo necesitan, usando `trafilatura`.
 
 El `id` de cada noticia es el **sha1 de su URL normalizada**, es decir, sin `utm_*`, sin `#` y sin la `/` final. Así, la misma nota que llega por dos fuentes cuenta como una sola.
@@ -94,7 +95,7 @@ El código para leer y escribir está en `hedwix_db/noticias.py`: `recientes()`,
 | Pieza | Qué tomará de la DB | Lo que ya está listo |
 |---|---|---|
 | **Email** (Diego) | Nada: *escribe* noticias con `origin: "email"`. | El validador ya acepta ese `origin`. |
-| **MCP** | Consultas de lectura: recientes, por fuente, búsqueda, populares. | Las funciones de `hedwix_db/noticias.py` y sus índices. |
+| **MCP** ✅ | Consultas de lectura con 6 tools (recientes, búsqueda, populares, noticia completa, fuentes, digest) y el usuario de sólo lectura `hedwix_mcp`. | Hecho: ver [`mcp/README.md`](../mcp/README.md). |
 | **Cloudflare** | Nada directo; expone el MCP hacia afuera. | — |
 | **Agent** | Usa las tools del MCP. | — |
 | **Agent-Dispatch** | Lee `usuarios` y `noticias`, escribe en `envios`. | Colecciones e índices, incluido el que evita reenviar una noticia. |
@@ -104,23 +105,22 @@ El código para leer y escribir está en `hedwix_db/noticias.py`: `recientes()`,
 
 ## 5. Cómo hacer correr todo hoy
 
+Desde la **raíz del repo**, donde está el `docker-compose.yml` que une todas las piezas:
+
 ```bash
-# 1. Levantar la DB
-cd db
-docker compose up -d && docker compose exec app python migrar.py
+# 1. Levantar la DB y el MCP
+docker compose up -d
+docker compose exec app python migrar.py
 
 # 2. Traer noticias de las últimas 24 h (el funnel escribe directo en Mongo)
-cd ..
-set -a; source db/.env; set +a
-docker run --rm --network hedwix_default -e MONGODB_URI -v "$PWD":/funnel:ro -w /funnel \
-  python:3.13-slim sh -c 'pip install -q -r requirements.txt && python funnel.py --horas 24'
+docker compose run --rm funnel
 
 # 3. Ver qué hay
-cd db
 docker compose exec app python consultas.py --buscar "agent"
+curl http://127.0.0.1:8000/health          # el MCP
 
 # 4. Respaldar
-scripts/respaldar.sh
+db/scripts/respaldar.sh
 ```
 
 Detalle de instalación, respaldos, migraciones y solución de problemas: [`GUIA.md`](GUIA.md).
@@ -130,4 +130,4 @@ Detalle de instalación, respaldos, migraciones y solución de problemas: [`GUIA
 - **MongoDB 8 no arranca en este kernel (7.0)**, por eso se usa 7.0 ([SERVER-121912](https://jira.mongodb.org/browse/SERVER-121912)).
 - **Texto completo que falla:** en la primera corrida no se pudo bajar el texto completo de 6 notas de OpenAI ni de una de Reuters; esas notas quedaron sólo con su resumen. Hay que avisarle a quien lleva el funnel.
 - **Rankings:** los de OpenRouter y HF guardan el `rank` del día en que el modelo entró, no el actual, porque un modelo que sigue en el ranking no se vuelve a guardar.
-- **Respaldos:** `backups/` no se sube a git. Copia los respaldos importantes fuera de esta máquina.
+- **Respaldos:** `db/backups/` no se sube a git. Copia los respaldos importantes fuera de esta máquina.

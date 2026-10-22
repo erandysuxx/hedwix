@@ -88,8 +88,28 @@ def mas_populares(db, desde=None, limite=10):
     return [a_item(doc) for doc in db.noticias.find(filtro).sort("score", DESCENDING).limit(limite)]
 
 
-def buscar(db, texto, limite=20):
-    """Búsqueda de texto en title, summary y content, ordenada por relevancia."""
-    cursor = (db.noticias.find({"$text": {"$search": texto}}, {"relevancia": {"$meta": "textScore"}})
+def buscar(db, texto, limite=20, fuentes=None, desde=None):
+    """Búsqueda de texto en title, summary y content, ordenada por relevancia.
+
+    Opcionalmente sólo de ciertas fuentes y publicadas desde una fecha.
+    """
+    filtro = {"$text": {"$search": texto}}
+    if fuentes:
+        filtro["source"] = {"$in": list(fuentes)}
+    if desde:
+        filtro["published"] = {"$gte": desde}
+    cursor = (db.noticias.find(filtro, {"relevancia": {"$meta": "textScore"}})
               .sort([("relevancia", {"$meta": "textScore"})]).limit(limite))
-    return [a_item(doc) for doc in cursor]
+    # "relevancia" sólo sirve para ordenar; se quita para regresar el mismo formato que las demás consultas
+    return [a_item({campo: valor for campo, valor in doc.items() if campo != "relevancia"}) for doc in cursor]
+
+
+def por_fuente(db):
+    """Cada fuente con cuántas noticias tiene y la fecha de la más reciente, de la que tiene más a la que menos."""
+    filas = db.noticias.aggregate([
+        {"$group": {"_id": "$source", "source_type": {"$first": "$source_type"}, "noticias": {"$sum": 1},
+                    "mas_reciente": {"$max": "$published"}}},
+        {"$sort": {"noticias": -1, "_id": 1}},
+    ])
+    return [{"source": fila["_id"], "source_type": fila["source_type"], "noticias": fila["noticias"],
+             "mas_reciente": fila["mas_reciente"].isoformat(timespec="seconds")} for fila in filas]

@@ -15,7 +15,7 @@
   - existen `usuarios` y `envios` con su validador.
 - **Muestras:** las últimas noticias, las más populares, una búsqueda de texto y una noticia completa.
 
-Necesita que Mongo esté arriba (`docker compose up -d`, desde `db/`).
+Necesita que Mongo esté arriba (`docker compose up -d`, desde la raíz del repo).
 
 ## Opción 1: abrirlo en VS Code
 
@@ -26,14 +26,14 @@ VS Code corre el notebook con el **kernel** (Python) que elijas. El Python del s
 # Una sola vez, desde la raíz del repo. uv se instala en ~/.local/bin sin sudo:
 #   curl -LsSf https://astral.sh/uv/install.sh | sh
 uv venv --python 3.13 db/testing/.venv
-uv pip install --python db/testing/.venv/bin/python -r requirements.txt -r db/requirements.txt -r db/testing/requirements.txt
+uv pip install --python db/testing/.venv/bin/python -r funnel/requirements.txt -r db/requirements.txt -r db/testing/requirements.txt
 # Registrarlo como kernel con nombre, para que VS Code lo encuentre aunque el .venv esté en una subcarpeta:
 db/testing/.venv/bin/python -m ipykernel install --user --name hedwix-db --display-name "Hedwix DB (db/testing/.venv)"
 ```
 
 En VS Code: recarga la ventana (*Developer: Reload Window*), abre `revisar_datos.ipynb` → **Select Kernel**
 (arriba a la derecha) → *Jupyter Kernel…* → **Hedwix DB (db/testing/.venv)**. Si no aparece, usa
-*Python Environments… → Enter interpreter path…* con la ruta a `db/testing/.venv/bin/python`. Fuera de Docker, el notebook lee la URI de `db/.env` y se conecta por `127.0.0.1`.
+*Python Environments… → Enter interpreter path…* con la ruta a `db/testing/.venv/bin/python`. Fuera de Docker, el notebook lee la URI del `.env` de la raíz y se conecta por `127.0.0.1`.
 
 **Sin instalar nada:** *Select Kernel → Existing Jupyter Server* → `http://127.0.0.1:8888`, con el servicio
 `notebook` de la opción 2 arriba. Así el código corre dentro de Docker.
@@ -41,7 +41,7 @@ En VS Code: recarga la ventana (*Developer: Reload Window*), abre `revisar_datos
 ## Opción 2: abrirlo en Jupyter (navegador)
 
 ```bash
-cd db
+# desde la raíz del repo
 docker compose --profile testing up -d --build notebook
 ```
 
@@ -53,7 +53,7 @@ Para apagarlo: `docker compose --profile testing stop notebook`
 ## Opción 3: correrlo desde la terminal y generar un reporte HTML
 
 ```bash
-cd db
+# desde la raíz del repo
 docker compose --profile testing run --rm --no-deps notebook sh -c '
   jupyter nbconvert --to notebook --execute revisar_datos.ipynb --output-dir salida --output revisar_datos.ejecutado.ipynb &&
   jupyter nbconvert --to html salida/revisar_datos.ejecutado.ipynb --output-dir salida --output revisar_datos.html'

@@ -1,0 +1,20 @@
+# Funnel: trae las noticias de las fuentes y las guarda en la DB. No se queda corriendo; se corre a mano:
+#   docker compose run --rm funnel                       (últimas 24 h)
+#   docker compose run --rm funnel python funnel.py --horas 48
+services:
+  funnel:
+    build:
+      context: ..
+      dockerfile: funnel/Dockerfile
+    profiles: ["manual"]
+    working_dir: /repo/funnel
+    user: "1000:1000"
+    environment:
+      MONGODB_URI: ${MONGODB_URI}   # usuario hedwix_app (escribe en noticias)
+      PYTHONDONTWRITEBYTECODE: "1"
+    volumes:
+      - ..:/repo   # escritura: sin MONGODB_URI el funnel guarda en funnel/datos/
+    depends_on:
+      mongo:
+        condition: service_healthy
+    command: python funnel.py

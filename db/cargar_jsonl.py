@@ -1,6 +1,6 @@
 """Carga en Mongo las noticias de un archivo JSONL del Information Funnel. Las repetidas se ignoran.
 
-Uso: docker compose exec app python cargar_jsonl.py /repo/datos/noticias.jsonl
+Uso (desde la raíz): docker compose exec app python cargar_jsonl.py /repo/funnel/datos/noticias.jsonl
 """
 
 import argparse
