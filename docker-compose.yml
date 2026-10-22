@@ -9,3 +9,5 @@ include:
     env_file: .env
   - path: mcp/docker-compose.yml      # mcp (http://127.0.0.1:8000/mcp)
     env_file: .env
+  - path: dispatch/docker-compose.yml # dispatch (se corre a mano: docker compose run --rm dispatch)
+    env_file: .env

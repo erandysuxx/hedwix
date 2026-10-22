@@ -18,7 +18,7 @@ db/
 │   ├── conexion.py           #   obtener_db()
 │   ├── noticias.py           #   insertar_noticias, recientes, mas_populares, buscar, por_fuente, a_item
 │   └── digests.py            #   digest()
-├── migraciones/              # 001_noticias.py, 002_usuarios_envios.py, ...
+├── migraciones/              # 001_noticias.py, 002_usuarios_envios.py, 003_digests.py, ...
 ├── migrar.py                 # aplica migraciones pendientes
 ├── cargar_jsonl.py           # carga un JSONL del funnel
 ├── consultas.py              # ejemplos de consultas
@@ -98,6 +98,7 @@ Los mismos 12 campos de [`funnel/ESQUEMA.md`](../funnel/ESQUEMA.md), con estos c
 | `por_fuente` | `source, published -1` | filtrar por fuente |
 | `populares` | `score -1`, sólo donde `score` es número | top de Hacker News y HF |
 | `busqueda` | texto: `title`×10, `summary`×5, `content` | búsqueda libre |
+| `por_llegada` | `fetched_at -1` | lo que llegó en las últimas horas (dispatch) |
 
 El validador `$jsonSchema` rechaza lo que no cumpla el esquema, por ejemplo `origin` distinto de `curated`/`email`, una URL inválida o fechas en texto.
 
@@ -108,9 +109,13 @@ El validador `$jsonSchema` rechaza lo que no cumpla el esquema, por ejemplo `ori
 `usuario_id`, `noticia_ids[]`, `canal: whatsapp`, `twilio_sid` (único cuando existe), `estado` (`pendiente|enviado|entregado|leido|fallido`), `error`, `creado`, `actualizado`.
 - El índice `ya_enviadas` (`usuario_id, noticia_ids`) sirve para no reenviarle a nadie la misma noticia.
 
+### `digests` (dispatch)
+`_id` (la fecha del digest en México, `AAAA-MM-DD`), `generado_at`, `modelo`, `mensaje` (máximo 1,600 caracteres, el límite de Twilio), `noticias[] {id, source, title, url, por_que}`.
+- Si el dispatch corre dos veces el mismo día, el segundo digest reemplaza al primero.
+
 ## 5. Migraciones (cambios de esquema)
 
-1. Crea `db/migraciones/004_lo_que_cambia.py` (la 003 ya la usa `feat/dispatch`; avisa al equipo qué número tomas) con `DESCRIPCION` y `aplicar(db)`. Para crear una colección o cambiar su validador usa `asegurar_coleccion()`.
+1. Crea `db/migraciones/004_lo_que_cambia.py` (la 003 es `003_digests`, del dispatch; avisa al equipo qué número tomas) con `DESCRIPCION` y `aplicar(db)`. Para crear una colección o cambiar su validador usa `asegurar_coleccion()`.
 2. Corre `docker compose exec app python migrar.py`.
 
 Las migraciones aplicadas se anotan en la colección `_migraciones` y no se repiten. **No edites una migración ya aplicada**: crea una nueva.

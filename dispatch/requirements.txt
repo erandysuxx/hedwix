@@ -1,0 +1,2 @@
+# Además de ../funnel/requirements.txt (el dispatch importa funnel.py)
+anthropic
