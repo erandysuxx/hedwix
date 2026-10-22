@@ -2,7 +2,7 @@
 
 Servidor [MCP](https://modelcontextprotocol.io) hecho con **FastMCP 4.1.3**. Deja que un agente consulte las noticias de IA de la DB.
 
-- **Sólo lectura:** usa el usuario de Mongo `hedwix_mcp`, que tiene rol `read` sobre la base `hedwix`.
+- **Sólo lectura:** usa el usuario de Mongo `hedwix_mcp`, con el rol `lectura_mcp`: sólo puede leer `noticias` y `digests`, no `usuarios` ni `envios` (teléfonos).
 - **Reutiliza las consultas** de `db/hedwix_db`.
 
 ```

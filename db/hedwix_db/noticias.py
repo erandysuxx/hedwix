@@ -70,13 +70,16 @@ def ids_existentes(db, ids):
     return set(db.noticias.distinct("_id", {"_id": {"$in": list(ids)}}))
 
 
-def recientes(db, desde=None, fuentes=None, limite=50):
-    """Las noticias más recientes, opcionalmente desde una fecha y de ciertas fuentes."""
+def recientes(db, desde=None, fuentes=None, limite=50, excluir_fuentes=None):
+    """Las noticias más recientes, opcionalmente desde una fecha, y sólo de ciertas `fuentes` o sin las de
+    `excluir_fuentes` (nombres o regex). Si se dan las dos, manda `fuentes`."""
     filtro = {}
     if desde:
         filtro["published"] = {"$gte": desde}
     if fuentes:
         filtro["source"] = {"$in": list(fuentes)}
+    elif excluir_fuentes:
+        filtro["source"] = {"$nin": list(excluir_fuentes)}
     return [a_item(doc) for doc in db.noticias.find(filtro).sort("published", DESCENDING).limit(limite)]
 
 

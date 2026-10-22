@@ -8,6 +8,7 @@ Uso: MONGODB_URI=... python servidor.py   -> HTTP en 0.0.0.0:8000, MCP en /mcp y
 La URI debe ser la del usuario de sólo lectura hedwix_mcp (ver db/scripts/crear_usuario_mcp.sh).
 """
 
+import re
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -26,6 +27,7 @@ from hedwix_db.noticias import a_item, buscar, mas_populares, por_fuente, recien
 LIMITE_DE_CONTENIDO = 20_000  # caracteres de `content` que regresa obtener_noticia
 # Rankings sin fecha propia: su `published` es la hora de la consulta, así que siempre parecen lo más nuevo
 RANKINGS = {"OpenRouter: top semanal", "OpenRouter: agénticos", "Hugging Face: modelos trending"}
+ARXIV = re.compile(r"^arXiv")  # arXiv cs.AI, cs.CL y cs.LG
 SOLO_LECTURA = {"readOnlyHint": True, "openWorldHint": False}
 
 Horas = Annotated[int, Field(ge=1, le=720, description="Qué tan atrás buscar, en horas (máximo 720 = 30 días)")]
@@ -64,11 +66,10 @@ def noticias_recientes(horas: Horas = 24, fuentes: Fuentes = None, limite: Limit
     - Rankings de modelos (OpenRouter top semanal y agénticos, HF trending): se guardan con la hora de la consulta, así que siempre saldrían primero (incluir_rankings=True para verlos).
     Si se pasan `fuentes`, se usan tal cual y estos dos filtros no aplican.
     """
-    if fuentes is None:
-        fuentes = [f["source"] for f in por_fuente(db)
-                   if (incluir_arxiv or not f["source"].startswith("arXiv"))
-                   and (incluir_rankings or f["source"] not in RANKINGS)]
-    noticias = [resumida(n) for n in recientes(db, desde=hace(horas), fuentes=fuentes, limite=limite)]
+    # Se excluye en el filtro de la consulta (que usa el índice por `published`), sin leer antes toda la colección
+    excluir = ([] if incluir_arxiv else [ARXIV]) + ([] if incluir_rankings else sorted(RANKINGS))
+    noticias = [resumida(n) for n in recientes(db, desde=hace(horas), fuentes=fuentes, excluir_fuentes=excluir,
+                                               limite=limite)]
     return {"noticias": noticias, "total": len(noticias)}
 
 

@@ -45,7 +45,7 @@ Usuarios de Mongo:
 |---|---|---|---|
 | `root` | `admin` | todo | respaldos, administración |
 | `hedwix_app` | `hedwix` | `readWrite` + `dbAdmin` sólo sobre `hedwix` | app, funnel, migraciones |
-| `hedwix_mcp` | `hedwix` | `read` sólo sobre `hedwix` | el MCP (`mcp/`); en una DB existente se crea con `db/scripts/crear_usuario_mcp.sh` |
+| `hedwix_mcp` | `hedwix` | `lectura_mcp`: sólo `find` en `noticias` y `digests` | el MCP (`mcp/`); en una DB existente se crea (o se le cambia el rol `read` de antes) con `db/scripts/crear_usuario_mcp.sh` |
 
 > Las credenciales de `.env` **sólo se aplican cuando el volumen está vacío**. Si las cambias después,
 > tienes que hacer respaldo → `docker compose down -v` → `up` → `migrar.py` → restaurar.

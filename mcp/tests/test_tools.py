@@ -111,6 +111,14 @@ async def test_digest_del_dia_sin_digest_no_falla(cliente):
         await llamar(cliente, "digest_del_dia", fecha="ayer")
 
 
+def test_el_usuario_del_mcp_no_puede_leer_usuarios_ni_envios():
+    db = MongoClient(os.environ["MONGODB_URI"]).get_default_database()
+    for coleccion in ("usuarios", "envios"):
+        with pytest.raises(OperationFailure) as error:
+            db[coleccion].find_one()
+        assert error.value.code == 13, coleccion  # Unauthorized
+
+
 def test_el_usuario_del_mcp_no_puede_escribir():
     db = MongoClient(os.environ["MONGODB_URI"]).get_default_database()
     with pytest.raises(OperationFailure) as error:
