@@ -8,7 +8,7 @@ Email ┐
 Curated Sources ┘                   └─► dispatch/ ─► Twilio ─► WhatsApp ─► usuarios
 ```
 
-Diagrama interactivo: [`db/docs/flujo-hedwix.html`](db/docs/flujo-hedwix.html), que se abre en el navegador. Estado detallado: [`db/COMO_FUNCIONA.md`](db/COMO_FUNCIONA.md).
+Diagrama interactivo: [`flujo-hedwix.html`](flujo-hedwix.html), que se abre en el navegador. Estado detallado: [`db/COMO_FUNCIONA.md`](db/COMO_FUNCIONA.md).
 
 ## Piezas
 

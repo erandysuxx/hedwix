@@ -1,6 +1,6 @@
 # Hedwix: cómo funciona hoy
 
-> Estado al **21 de octubre de 2026**. Diagrama interactivo: [`docs/flujo-hedwix.html`](docs/flujo-hedwix.html)
+> Estado al **21 de octubre de 2026**. Diagrama interactivo: [`flujo-hedwix.html`](../flujo-hedwix.html) (en la raíz del repo)
 > (ábrelo en el navegador; en gris y con línea punteada está lo que todavía no existe).
 
 Hedwix es un bot de noticias de IA. Junta noticias de muchas fuentes, las guarda en una base de datos y,

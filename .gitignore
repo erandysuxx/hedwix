@@ -6,7 +6,8 @@ datos/
 # DB (db/)
 .env
 backups/
-db/docs/*.json
+# recibos de archify del diagrama
+flujo-hedwix.*.json
 .archify/
 db/testing/salida/
 .ipynb_checkpoints/
